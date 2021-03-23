@@ -171,4 +171,4 @@ describe("null", () => {
   });
 });
 
-// If all tests pass here, we can simply choose any type for remaining tests.
+// If all tests pass here, we can simply choose any type (e.g. String) for remaining tests.
