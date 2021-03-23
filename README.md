@@ -1,5 +1,8 @@
 # timed-promise
 
-This is a rather simple and straightforward of a (typescript) implementation of `Promise` that allows for a timeout to be given. Published to NPM for my own convenience.
+[![Node build and publish](https://github.com/dbarenholz/timed-promise/actions/workflows/node.js.yml/badge.svg)](https://github.com/dbarenholz/timed-promise/actions/workflows/node.js.yml)
 
-Requires Node v14.+ (see https://stackoverflow.com/questions/61305578/what-typescript-configuration-produces-output-closest-to-node-js-14-capabilities/61305579#61305579)
+Typescript implementation of [this](https://github.com/liqd-js/timed-promise). Published to npm. Reason for repository:
+- learning how to publish to NPM
+- learning how to create a package
+- getting familiar with the difference between typescript and pure javascript 

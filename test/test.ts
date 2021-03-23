@@ -1,5 +1,12 @@
-import { Greeter } from "../src/index";
+// Jest requires CommonJS syntax
+const fs = require("fs");
 
-test("My Greeter", () => {
-  expect(Greeter("Daniel")).toBe("Hello Daniel");
+describe("Tests", () => {
+  let files = fs.readdirSync(__dirname + "/tests");
+
+  for (const file of files) {
+    describe(file, () => {
+      require(__dirname + "/tests/" + file);
+    });
+  }
 });

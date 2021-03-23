@@ -1,6 +1,6 @@
 {
   "name": "@dbarenholz/timed-promise",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Allow promises to have timeouts.",
   "type": "module",
   "main": "lib/index.js",
@@ -21,7 +21,7 @@
     "timeout"
   ],
   "author": "dbarenholz",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/dbarenholz/timed-promise/issues"
   },
