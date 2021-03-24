@@ -1,47 +1,43 @@
-import assert from "assert";
 import TimedPromise from "../../src/index";
+import { approximately, sleep } from "../test";
 
-//TODO Fix these tests with proper typings
-// TODO Fix assert.strictEqual
+it("should be matching", async () => {
+  const start = new Date().getTime();
+  const promiseTimeoutValue: number = 1500;
+  const deviation: number = 15 * 5;
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const approximately = (a, b, epsilon) => Math.abs(a - b) < epsilon;
+  let ms: number;
+  let timeouted: number;
 
-it("TimedPromise properties should be matching", async () => {
-  let start = new Date().getTime();
-  let promise_timeout_ms, timeouted;
-
-  let promise = new TimedPromise((resolve, reject, remaining_ms) => {
-    assert.ok(approximately(remaining_ms, 1500, 10), "Invalid TimedPromise remaining_ms time");
-
-    promise_timeout_ms = remaining_ms;
+  let promiseToTest = new TimedPromise<Boolean>((_resolve, _reject, timeout) => {
+    ms = timeout;
   });
 
-  assert.ok(
-    approximately(promise.created(), start, 10),
-    "Invalid TimedPromise starting created time " + promise.created()
-  );
-  assert.ok(approximately(promise.elapsed(), 0, 10), "Invalid TimedPromise starting elapsed time " + promise.elapsed());
-  assert.ok(promise.remaining() === Infinity, "Invalid TimedPromise starting remaining time " + promise.remaining());
+  expect(approximately(promiseToTest.created(), start, deviation)).toBeTruthy();
+  expect(approximately(promiseToTest.elapsed(), 0, deviation)).toBeTruthy();
+  expect(promiseToTest.remaining()).toBe(Infinity);
 
-  promise = promise.timeout(1500);
-  promise.catch((e) => {
+  promiseToTest = promiseToTest.timeout(promiseTimeoutValue);
+
+  promiseToTest.catch(() => {
     timeouted = new Date().getTime();
   });
 
+  // This block tests repeatedly while not yet timeouted
+  // If tests fail: log the variables, check if deviation too low (aka your machine is slow)
   while (!timeouted) {
     await sleep(100);
 
-    let now = new Date().getTime();
-    let [created, elapsed, remaining] = [promise.created(), promise.elapsed(), promise.remaining()];
+    const now = new Date().getTime();
+    const created = promiseToTest.created();
+    const elapsed = promiseToTest.elapsed();
+    const remaining = promiseToTest.remaining();
 
-    assert.ok(approximately(created, start, 10), "Invalid TimedPromise created time " + created);
-    assert.ok(approximately(elapsed, now - start, 10), "Invalid TimedPromise elapsed time " + elapsed);
-    assert.ok(
-      elapsed >= promise_timeout_ms
-        ? approximately(remaining, 0, 10)
-        : approximately(remaining, promise_timeout_ms - (now - start), 10),
-      "Invalid TimedPromise remaining time " + remaining + " " + elapsed + " " + promise_timeout_ms
-    );
+    // tests: created property
+    expect(approximately(created, start, deviation)).toBeTruthy();
+    // tests: elapsed property
+    expect(approximately(elapsed, now - start, deviation)).toBeTruthy();
+    // tests: remaining property
+    expect(approximately(remaining + now - start, promiseTimeoutValue, deviation)).toBeTruthy();
   }
 });

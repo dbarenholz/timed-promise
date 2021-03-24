@@ -1,59 +1,80 @@
-import assert from "assert";
 import TimedPromise from "../../src/index";
 
-// TODO: Fix these tests with correct typing
-it("Upgraded TimedPromise should be resolved", async () => {
-  let promise = new TimedPromise<String>(
-    new Promise<String>((resolve, reject) => {
-      resolve("Resolved");
-    })
-  );
+it("should be resolved", async () => {
+  let normalPromise = new Promise((resolve, _reject) => {
+    resolve(true);
+  });
 
-  assert.strictEqual(await promise, "Resolved", "TimedPromise not Resolved");
+  let promiseToTest = new TimedPromise(normalPromise);
+
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBeTruthy();
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
-it("TimedPromise should be rejected", async () => {
+it("should be rejected", async () => {
+  const timeout = 1000;
+
+  let normalPromise = new Promise((_resolve, reject) => {
+    reject(true);
+  });
+
+  let promiseToTest = new TimedPromise(normalPromise).timeout(timeout);
+
   try {
-    let result = await new TimedPromise(
-      new Promise((resolve, reject) => {
-        reject("Rejected");
-      })
-    ).timeout(1000);
-  } catch (error) {
-    assert.strictEqual(error, "Rejected", "TimedPromise not rejected");
+    const _ = await promiseToTest;
+  } catch (result) {
+    expect(result).toBeTruthy();
   }
 });
 
-it("Upgraded TimedPromise should be resolved without triggering timeout", async () => {
-  let promise = new TimedPromise(
-    new Promise((resolve, reject) => {
-      resolve("Resolved");
-    })
-  ).timeout(1000);
+it("should be resolved without triggering timeout", async () => {
+  const timeout = 1000;
 
-  assert.strictEqual(await promise, "Resolved", "TimedPromise not Resolved");
+  let normalPromise = new Promise((resolve, _reject) => {
+    resolve(true);
+  });
+
+  let promiseToTest = new TimedPromise(normalPromise).timeout(timeout);
+
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBeTruthy();
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
-it("Upgraded TimedPromise should be timeouted and throws exception", async () => {
+it("should be timeouted and throws exception", async () => {
+  const timeout = 1000;
+
+  let normalPromise = new Promise((_resolve, _reject) => {
+    // do nothing
+  });
+
+  let promiseToTest = new TimedPromise(normalPromise).timeout(timeout);
+
+  expect.assertions(2);
+
   try {
-    let result = await new TimedPromise(
-      new Promise((resolve, reject) => {
-        //resolve( 'Resolved' );
-      })
-    ).timeout(1000);
+    const _ = await promiseToTest;
   } catch (error) {
-    assert.strictEqual(error, "timeout", "TimedPromise not timeouted");
+    expect(error).toBe("promise timeout");
   }
+
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
-it("Upgraded TimedPromise should be timeouted and catches exception", async () => {
-  let result = await new TimedPromise(
-    new Promise((resolve, reject) => {
-      //resolve( 'Resolved' );
-    })
-  )
-    .timeout(1000)
-    .catch((error) => "Catched-" + error);
+it("should be timeouted and catches exception", async () => {
+  const timeout = 1000;
 
-  assert.strictEqual(result, "Catched-timeout", "TimedPromise not catched");
+  let normalPromise = new Promise((_resolve, _reject) => {
+    // do nothing
+  });
+
+  let promiseToTest = new TimedPromise(normalPromise).timeout(timeout).catch(() => "caught");
+
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBe("caught");
+  expect(promiseToTest.settled).toBeTruthy();
 });

@@ -1,36 +1,81 @@
-function isNativePromiseExecutor<T>(executor: Function | Promise<T>) {
+/**
+ * A regex that tests if an executor is native, or not.
+ *
+ * @param {Function | Promise<T> | TimedPromise<T>} executor executor to check.
+ * @returns {Boolean} if executor is native, {@code false} otherwise.
+ */
+function isNativePromiseExecutor<T>(executor: Function | Promise<T> | TimedPromise<T>): boolean {
   return /^function[\sA-Za-z0-9]*\(\s*\)\s*{\s*\[\s*native\s+code\s*\]\s*}\s*$/.test(executor.toString());
 }
 
 /**
  * @author Barenholz D.
  * @type TimedPromiseType<T>
- * @description The particular fields in a timed promise.
+ * @description The particular fields in a timed promise and their typings.
+ * @field parent:  a possible parent promise
+ * @field created: time (unix time) at which promise was created
+ * @field timeout: number of ms before timedpromise should throw error / reject
+ * @field timer:   the actual timer that keeps track of the timeout
+ * @field pending: boolean indicating if promise is pending, or completed / settled
+ * @field resolve: resolve method in promises
+ * @field reject:  reject method in promises
+ * @see Promise
  * @version 0.1.1
  */
-type TimedPromiseType<T> = {
-  parent: TimedPromise<T>;
+type TimedPromiseType = {
+  parent: TimedPromise<any>;
   created: number;
   timeout: number;
-  timer: any;
+  timer: NodeJS.Timeout;
   pending: boolean;
   resolve: (value: any, ms?: number) => void;
   reject: (reason?: any) => void;
 };
 
 /**
+ * Represents the completion of an asynchronous operation, _with timeouts_.
+ */
+interface TimedPromiseInterface<T> extends Promise<T> {
+  /**
+   * Attaches callbacks for the resolution and/or rejection of the TimedPromise.
+   * @param {void} onfulfilled The callback to execute when the TimedPromise is resolved.
+   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   *
+   * @returns {TimedPromise<TypeA | TypeB>} A TimedPromise for the completion of which ever callback is executed.
+   */
+  then<TypeA = T, TypeB = never>(
+    onfulfilled?: ((value: T, ms?: number) => TypeA | PromiseLike<TypeA>) | undefined | null,
+    onrejected?: ((reason: any, ms?: number) => TypeB | PromiseLike<TypeB>) | undefined | null
+  ): TimedPromise<TypeA | TypeB>;
+
+  /**
+   * Attaches a callback for only the rejection of the TimedPromise.
+   *
+   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   *
+   * @returns {TimedPromise<TResult>} A TimedPromise for the completion of the callback.
+   */
+  catch<TResult = never>(
+    onrejected?: ((reason: any, ms?: number) => TResult | PromiseLike<TResult>) | undefined | null
+  ): TimedPromise<T | TResult>;
+}
+
+/**
  * @author Barenholz D.
  * @class TimedPromise
- * @description A promise that can be timed out.
+ * @description A promise that can be timed out, with typings.
  * @extends Promise<T>
  * @version 0.1.1
  */
-export default class TimedPromise<T> extends Promise<T> {
-  // Initialise type
-  timedPromise: TimedPromiseType<T>;
+export default class TimedPromise<T> extends Promise<T> implements TimedPromiseInterface<T> {
+  timedPromise: TimedPromiseType;
 
-  // constructor: Create the TimedPromise object
-  constructor(executor: (resolve?: (value: T) => void, reject?: (reason?: any) => void, timeout?: number) => void) {
+  /**
+   * Constructor. Creates a TimedPromise object.
+   * // TODO: What type should I give executor?
+   * @param executor can be a promise, or a function of following shape `(resolve?: (value: T) => void, reject?: (reason?: any) => void, timeout?: number) => void`, `{Function | Promise<T> | TimedPromise<T>}`
+   */
+  constructor(executor) {
     let timedPromise = {
       parent: null,
       created: Date.now(),
@@ -43,8 +88,7 @@ export default class TimedPromise<T> extends Promise<T> {
 
     // Call super with resolve reject to set own resolve and reject methods
     super((resolve, reject) => {
-      // Set resolve method
-      timedPromise.resolve = (value) => {
+      timedPromise.resolve = (value: T) => {
         if (timedPromise.pending) {
           timedPromise.pending = false;
           if (timedPromise.timer) {
@@ -55,8 +99,7 @@ export default class TimedPromise<T> extends Promise<T> {
           return resolve(value);
         }
       };
-      // Set reject method
-      timedPromise.reject = (value) => {
+      timedPromise.reject = (value: T) => {
         if (timedPromise.pending) {
           timedPromise.pending = false;
           if (timedPromise.timer) {
@@ -68,57 +111,42 @@ export default class TimedPromise<T> extends Promise<T> {
         }
       };
 
-      // if native, use native one
       if (isNativePromiseExecutor<T>(executor)) {
         executor(timedPromise.resolve, timedPromise.reject);
-        // if promise-like, then call then with resolve and reject
       } else if (executor instanceof Promise) {
         executor.then(timedPromise.resolve, timedPromise.reject);
-        // otherwise use nextTick and call our own thing
       } else {
-        try {
-          executor(timedPromise.resolve, timedPromise.reject, this.remaining());
-        } catch {
-          executor(timedPromise.resolve, timedPromise.reject, Infinity);
-        }
+        executor(timedPromise.resolve, timedPromise.reject, Infinity);
       }
     });
 
     this.timedPromise = timedPromise;
   }
 
-  // set timeout
-  timeout(
-    // The timeout itself, in milliseconds
-    ms: number,
-    // The supplied reason for rejecting the promise
-    reason: String = "TimedPromise Timeout",
-    // Whether or not this is catchable by a parent promise
-    catchable_by_parent: Boolean = false
-  ) {
-    // Test if current TimedPromise has remaining time
+  /**
+   * Allows `.timeout()` call on a TimedPromise object to set the timeout.
+   * @param {Number} ms                      the timeout value in ms
+   * @param {String} reason                  possible custom reason why a promise rejected
+   * @param {Boolean} catchable_by_parent    boolean stating whether or not this rejection is catchable by a parent promise
+   * @returns {TimedPromise<T>} `this`, TimedPromise instance.
+   */
+  timeout(ms: number, reason: String = "promise timeout", catchable_by_parent: Boolean = false): TimedPromise<T> {
     if (this.timedPromise && this.timedPromise.pending && this.remaining() > ms) {
-      // If the promise has a parent with timeout value
       if (catchable_by_parent && this.timedPromise.parent && this.timedPromise.parent.timeout) {
-        // Use parents timeout
         this.timedPromise.parent.timeout(ms, reason, catchable_by_parent);
       }
 
-      // Set timeout value
       this.timedPromise.timeout = Date.now() + ms;
 
-      // Clear timeout if it exists
       if (this.timedPromise.timer) {
         clearTimeout(this.timedPromise.timer);
       }
 
-      // Set timer (timeout itself) to reject promise
       this.timedPromise.timer = setTimeout(() => {
         this.timedPromise.timer = null;
         this.timedPromise.reject(reason);
       }, ms);
 
-      //
       if (!catchable_by_parent && this.timedPromise.parent && this.timedPromise.parent.timeout) {
         this.timedPromise.parent.timeout(ms, reason, catchable_by_parent);
       }
@@ -128,17 +156,22 @@ export default class TimedPromise<T> extends Promise<T> {
   }
 
   /**
-   *
-   * @returns
+   * @returns {Number} time of creation of TimedPromise object.
    */
   created(): number {
     return this.timedPromise.created;
   }
 
+  /**
+   * @returns {Number} time elapsed since creation of TimedPromise object
+   */
   elapsed(): number {
     return Date.now() - this.timedPromise.created;
   }
 
+  /**
+   * @returns {Number} the time remaining before the TimedPromise object rejects.
+   */
   remaining(): number {
     if (this.timedPromise.pending) {
       return this.timedPromise.timeout === Infinity ? Infinity : Math.max(0, this.timedPromise.timeout - Date.now());
@@ -147,36 +180,35 @@ export default class TimedPromise<T> extends Promise<T> {
     }
   }
 
+  get settled() {
+    return !this.timedPromise.pending;
+  }
+
   then<TypeA = T, TypeB = never>(
-    onFulfilled?: (value: T, ms?: number) => TypeA | PromiseLike<TypeA>,
-    onRejected?: (reason: any, ms?: number) => TypeB | PromiseLike<TypeB>
+    onfulfilled?: ((value: T, ms?: number) => TypeA | PromiseLike<TypeA>) | undefined | null,
+    onrejected?: ((reason: any, ms?: number) => TypeB | PromiseLike<TypeB>) | undefined | null
   ): TimedPromise<TypeA | TypeB> {
-    // Setting type to any fixes type issue
-    // TODO: Fix type; should be TimedPromise
-    let thenPromise: any = super.then(
-      !onFulfilled || isNativePromiseExecutor(onFulfilled)
-        ? onFulfilled
-        : (value) => onFulfilled(value, this.remaining()),
-      // onrejected
-      !onRejected || isNativePromiseExecutor(onRejected) ? onRejected : (reason) => onRejected(reason, this.remaining())
-    );
+    let thenPromise = super.then(
+      !onfulfilled || isNativePromiseExecutor(onfulfilled)
+        ? onfulfilled
+        : (value) => onfulfilled(value, this.remaining()),
+      !onrejected || isNativePromiseExecutor(onrejected) ? onrejected : (reason) => onrejected(reason, this.remaining())
+    ) as TimedPromise<TypeA | TypeB>;
 
     thenPromise.timedPromise.parent = this;
 
     return thenPromise;
   }
 
-  catch(onRejected?: ((reason: any, ms?: number) => PromiseLike<never>) | undefined | null): TimedPromise<T> {
-    const catchPromise: any = super.catch(
-      !onRejected || isNativePromiseExecutor(onRejected) ? onRejected : (reason) => onRejected(reason, this.remaining())
-    );
+  catch<TypeA = never>(
+    onrejected?: ((reason: any, ms?: number) => TypeA | PromiseLike<TypeA>) | undefined | null
+  ): TimedPromise<T | TypeA> {
+    let catchPromise = super.catch(
+      !onrejected || isNativePromiseExecutor(onrejected) ? onrejected : (reason) => onrejected(reason, this.remaining())
+    ) as TimedPromise<T>;
 
     catchPromise.timedPromise.parent = this;
 
     return catchPromise;
-  }
-
-  get settled() {
-    return !this.timedPromise.pending;
   }
 }

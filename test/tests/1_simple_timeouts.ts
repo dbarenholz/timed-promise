@@ -1,5 +1,5 @@
-import assert from "assert";
-import TimedPromise from "../../lib/index";
+import TimedPromise from "../../src/index";
+import { approximately } from "../test";
 
 it("should be resolved without triggering timeout", async () => {
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
@@ -21,10 +21,11 @@ it("should be timeouted and throws exception", async () => {
 
   expect.assertions(2);
 
+  // We expect exception, catch it here.
   try {
     const _ = await promiseToTest;
   } catch (result) {
-    expect(result).toBe("TimedPromise Timeout");
+    expect(result).toBe("promise timeout");
   }
 
   expect(promiseToTest.settled).toBeTruthy();
@@ -37,70 +38,53 @@ it("should be timeouted and catches exception", async () => {
     setTimeout(resolve, timeAvailable * 2);
   })
     .timeout(timeAvailable)
-    .catch((reason, ms) => {
-      // Typing must be 'any' due to the way 
-      let tmp: any = {
-        reason: reason,
-        ms: ms
-      };
-
-      return tmp;
+    .catch((reason, _ms) => {
+      return reason;
     });
 
+  // Exception caught above.
   expect.assertions(2);
-
-  try {
-    const _ = await promiseToTest;
-  } catch (result) {
-    expect(result).toBe("TimedPromise Timeout");
-  }
-
+  const result = await promiseToTest;
+  expect(result).toBe("promise timeout");
   expect(promiseToTest.settled).toBeTruthy();
-  //////////////
-
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
-  })
-    .timeout(1000)
-    .catch((error) => "Catched-" + error);
-
-  assert.equal(result, "Catched-timeout", "TimedPromise not catched");
 });
 
 it("should be timeouted and catches exception with lowest timeout", async () => {
-  let start = new Date().getTime();
+  const baseTimeAvailable = 1000;
+  const start = new Date().getTime();
 
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
+  let promiseToTest = new TimedPromise((_resolve, _reject, _timeout) => {
+    // do nothing
   })
-    .timeout(5000)
-    .timeout(1000)
-    .timeout(2000)
-    .catch((error) => "Catched-" + error);
+    .timeout(5 * baseTimeAvailable)
+    .timeout(1 * baseTimeAvailable)
+    .timeout(2 * baseTimeAvailable)
+    .catch((reason, _ms) => {
+      return reason;
+    });
 
-  let elapsed = new Date().getTime() - start;
+  expect.assertions(3);
 
-  assert.ok(950 < elapsed && elapsed < 1050, "Invalid TimedPromise timeout");
-  assert.equal(result, "Catched-timeout", "TimedPromise not catched");
+  const result = await promiseToTest;
+  const timeElapsed = new Date().getTime() - start;
+  const deviation = 50;
+  expect(result).toBe("promise timeout");
+  expect(approximately(timeElapsed, baseTimeAvailable, deviation)).toBeTruthy();
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
 it("should settle", async () => {
-  let start = new Date().getTime();
+  const baseTimeAvailable = 1000;
 
-  let promise = new TimedPromise((resolve, reject, timeout) => {
-    setTimeout(resolve, 1000);
+  let promiseToTest = new TimedPromise((resolve, _reject, _timeout) => {
+    setTimeout(resolve("done"), 3 * baseTimeAvailable);
   })
-    .timeout(5000)
-    .timeout(1000)
-    .timeout(2000)
-    .catch((error) => "Catched-" + error);
+    .timeout(baseTimeAvailable)
+    .catch(() => "caught");
 
-  assert.equal(promise.settled, false, "TimedPromise settled");
+  expect.assertions(2);
 
-  let result = await promise;
-  let elapsed = new Date().getTime() - start;
-
-  assert.ok(950 < elapsed && elapsed < 1050, "Invalid TimedPromise timeout");
-  assert.equal(result, "Catched-timeout", "TimedPromise not catched");
-  assert.equal(promise.settled, true, "TimedPromise not settled");
+  expect(promiseToTest.settled).toBeFalsy();
+  const _ = await promiseToTest;
+  expect(promiseToTest.settled).toBeTruthy();
 });

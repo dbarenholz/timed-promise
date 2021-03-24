@@ -1,73 +1,46 @@
-import assert from "assert";
 import TimedPromise from "../../src/index";
 
-//TODO Fix these tests with proper typings
-// TODO Fix assert.strictEqual
-it("TimedPromise should be timeouted with default rejection", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
+it("should be timeouted with string rejection", async () => {
+  const customMessage = "custom message";
+
+  let promiseToTest = new TimedPromise((_resolve, _reject, _timeout) => {
+    // do nothing
   })
-    .timeout(1000)
+    .timeout(1000, customMessage)
     .catch((e) => e);
 
-  assert.equal(result, "timeout", "Invalid TimedPromise rejection");
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBe(customMessage);
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
-it("TimedPromise should be timeouted with string rejection", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
-  })
-    .timeout(1000, "string")
-    .catch((e) => e);
-
-  assert.equal(result, "string", "Invalid TimedPromise rejection");
-});
-
-it("TimedPromise should be timeouted with number rejection", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
-  })
-    .timeout(1000, 42)
-    .catch((e) => e);
-
-  assert.equal(result, 42, "Invalid TimedPromise rejection");
-});
-
-it("TimedPromise should be timeouted with object rejection", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
-  })
-    .timeout(1000, { ok: false, error: "timeout" })
-    .catch((e) => e);
-
-  assert.deepStrictEqual(result, { ok: false, error: "timeout" }, "Invalid TimedPromise rejection");
-});
-
-it("TimedPromise should not be catchable by parent", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
+it("should not be catchable by parent", async () => {
+  let promiseToTest = new TimedPromise((_resolve, _reject, _timeout) => {
+    // do nothing
   })
     .then((v) => v)
-    .catch((e) => "Catched-by-parent-" + e)
+    .catch((e) => "catched-by-parent-" + e)
     .timeout(1000, "timeout", false)
     .catch((e) => e);
 
-  assert.deepStrictEqual(result, "timeout", "Invalid TimedPromise rejection");
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBe("timeout");
+  expect(promiseToTest.settled).toBeTruthy();
 });
 
-it("TimedPromise should be catchable by parent", async () => {
-  let result = await new TimedPromise((resolve, reject, timeout) => {
-    //resolve( 'Resolved' );
+it("should be catchable by parent", async () => {
+  let promiseToTest = new TimedPromise((_resolve, _reject, _timeout) => {
+    // do nothing
   })
     .then((v) => v)
-    .catch((e) => "Catched-by-parent-" + e)
+    .catch(() => "parent-timeout")
     .timeout(1000, "timeout", true)
     .catch((e) => e);
 
-  if (parseInt(process.version.match(/^v([0-9]+)/)[1]) >= 11) {
-    assert.deepStrictEqual(result, "Catched-by-parent-timeout", "Invalid TimedPromise rejection");
-  } else {
-    // TODO not working in nodeJS < 11, resolve
-    assert.deepStrictEqual(result, "timeout", "Invalid TimedPromise rejection");
-  }
+  expect.assertions(2);
+  const result = await promiseToTest;
+  expect(result).toBe("parent-timeout");
+  expect(promiseToTest.settled).toBeTruthy();
 });
