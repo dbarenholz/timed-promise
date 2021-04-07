@@ -77,7 +77,7 @@ it("should settle", async () => {
   const baseTimeAvailable = 1000;
 
   let promiseToTest = new TimedPromise((resolve, _reject, _timeout) => {
-    setTimeout(resolve("done"), 3 * baseTimeAvailable);
+    setTimeout(() => resolve("done"), 3 * baseTimeAvailable);
   })
     .timeout(baseTimeAvailable)
     .catch(() => "caught");

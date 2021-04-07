@@ -1,6 +1,6 @@
 {
   "name": "@dbarenholz/timed-promise",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Allow promises to have timeouts.",
   "type": "module",
   "main": "lib/index.js",

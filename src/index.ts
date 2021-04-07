@@ -1,10 +1,10 @@
 /**
  * A regex that tests if an executor is native, or not.
  *
- * @param {Function | Promise<T> | TimedPromise<T>} executor executor to check.
- * @returns {Boolean} if executor is native, {@code false} otherwise.
+ * @param {Function} executor executor to check.
+ * @returns {Boolean} `true` if executor is native, `false` otherwise.
  */
-function isNativePromiseExecutor<T>(executor: Function | Promise<T> | TimedPromise<T>): boolean {
+function isNativePromiseExecutor<T>(executor: Function): boolean {
   return /^function[\sA-Za-z0-9]*\(\s*\)\s*{\s*\[\s*native\s+code\s*\]\s*}\s*$/.test(executor.toString());
 }
 
@@ -20,7 +20,7 @@ function isNativePromiseExecutor<T>(executor: Function | Promise<T> | TimedPromi
  * @field resolve: resolve method in promises
  * @field reject:  reject method in promises
  * @see Promise
- * @version 0.1.1
+ * @version 0.2.0
  */
 type TimedPromiseType = {
   parent: TimedPromise<any>;
@@ -33,7 +33,7 @@ type TimedPromiseType = {
 };
 
 /**
- * Represents the completion of an asynchronous operation, _with timeouts_.
+ * Represents the completion of an asynchronous operation, **with timeouts**.
  */
 interface TimedPromiseInterface<T> extends Promise<T> {
   /**
@@ -64,18 +64,22 @@ interface TimedPromiseInterface<T> extends Promise<T> {
  * @author Barenholz D.
  * @class TimedPromise
  * @description A promise that can be timed out, with typings.
- * @extends Promise<T>
- * @version 0.1.1
+ * @extends Promise<T> Adds timeouts to promises.
+ * @version 0.2.0
  */
 export default class TimedPromise<T> extends Promise<T> implements TimedPromiseInterface<T> {
   timedPromise: TimedPromiseType;
 
   /**
    * Constructor. Creates a TimedPromise object.
-   * // TODO: What type should I give executor?
-   * @param executor can be a promise, or a function of following shape `(resolve?: (value: T) => void, reject?: (reason?: any) => void, timeout?: number) => void`, `{Function | Promise<T> | TimedPromise<T>}`
+   * @param executor Either a (timed)-promise, or an executor, possibly with timeout.
    */
-  constructor(executor) {
+  constructor(
+    executor:
+      | ((resolve?: (value: T) => void, reject?: (reason?: any) => void, timeout?: number) => void)
+      | Promise<T>
+      | PromiseLike<T>
+  ) {
     let timedPromise = {
       parent: null,
       created: Date.now(),
@@ -111,11 +115,16 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
         }
       };
 
-      if (isNativePromiseExecutor<T>(executor)) {
+      // if a function, check if native
+      if (executor instanceof Function && isNativePromiseExecutor<T>(executor)) {
         executor(timedPromise.resolve, timedPromise.reject);
-      } else if (executor instanceof Promise) {
+      }
+      // if a promise, then use promise stuff
+      if (executor instanceof Promise) {
         executor.then(timedPromise.resolve, timedPromise.reject);
-      } else {
+      }
+      // non-native function
+      if (executor instanceof Function && !isNativePromiseExecutor<T>(executor)) {
         executor(timedPromise.resolve, timedPromise.reject, Infinity);
       }
     });
@@ -180,10 +189,20 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
     }
   }
 
-  get settled() {
+  /**
+   * @returns {Boolean} whether or not this TimedPromise object is still pending.
+   */
+  get settled(): boolean {
     return !this.timedPromise.pending;
   }
 
+  /**
+   * Attaches callbacks for the resolution and/or rejection of the TimedPromise.
+   * @param {void} onfulfilled The callback to execute when the TimedPromise is resolved.
+   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   *
+   * @returns {TimedPromise<TypeA | TypeB>} A TimedPromise for the completion of which ever callback is executed.
+   */
   then<TypeA = T, TypeB = never>(
     onfulfilled?: ((value: T, ms?: number) => TypeA | PromiseLike<TypeA>) | undefined | null,
     onrejected?: ((reason: any, ms?: number) => TypeB | PromiseLike<TypeB>) | undefined | null
@@ -200,6 +219,13 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
     return thenPromise;
   }
 
+  /**
+   * Attaches a callback for only the rejection of the TimedPromise.
+   *
+   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   *
+   * @returns {TimedPromise<TResult>} A TimedPromise for the completion of the callback.
+   */
   catch<TypeA = never>(
     onrejected?: ((reason: any, ms?: number) => TypeA | PromiseLike<TypeA>) | undefined | null
   ): TimedPromise<T | TypeA> {
