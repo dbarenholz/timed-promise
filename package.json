@@ -1,6 +1,6 @@
 {
   "name": "@dbarenholz/timed-promise",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Allow promises to have timeouts.",
   "type": "module",
   "main": "lib/index.js",
@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "cleanbuild": "rm -rf lib; tsc",
-    "test": "jest --config jestconfig.json"
+    "test": "jest --config jestconfig.json --verbose"
   },
   "repository": {
     "type": "git",

@@ -6,12 +6,9 @@ it("should be matching", async () => {
   const promiseTimeoutValue: number = 1500;
   const deviation: number = 15 * 5;
 
-  let ms: number;
-  let timeouted: number;
+  let timeouted: number | null = null;
 
-  let promiseToTest = new TimedPromise<Boolean>((_resolve, _reject, timeout) => {
-    ms = timeout;
-  });
+  let promiseToTest = new TimedPromise<Boolean>((_resolve, _reject, _timeout) => {});
 
   expect(approximately(promiseToTest.created(), start, deviation)).toBeTruthy();
   expect(approximately(promiseToTest.elapsed(), 0, deviation)).toBeTruthy();

@@ -3,7 +3,7 @@ import { approximately } from "../test";
 
 it("should be resolved without triggering timeout", async () => {
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
-    resolve("Resolved");
+    resolve!("Resolved");
   }).timeout(1000);
 
   expect.assertions(2);
@@ -16,14 +16,14 @@ it("should be timeouted and throws exception", async () => {
   const timeAvailable = 1000;
 
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
-    setTimeout(resolve, timeAvailable * 2);
+    setTimeout(resolve!, timeAvailable * 2);
   }).timeout(timeAvailable);
 
   expect.assertions(2);
 
   // We expect exception, catch it here.
   try {
-    const _ = await promiseToTest;
+    await promiseToTest;
   } catch (result) {
     expect(result).toBe("promise timeout");
   }
@@ -35,7 +35,7 @@ it("should be timeouted and catches exception", async () => {
   const timeAvailable = 1000;
 
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
-    setTimeout(resolve, timeAvailable * 2);
+    setTimeout(resolve!, timeAvailable * 2);
   })
     .timeout(timeAvailable)
     .catch((reason, _ms) => {
@@ -77,7 +77,7 @@ it("should settle", async () => {
   const baseTimeAvailable = 1000;
 
   let promiseToTest = new TimedPromise((resolve, _reject, _timeout) => {
-    setTimeout(() => resolve("done"), 3 * baseTimeAvailable);
+    setTimeout(() => resolve!("done"), 3 * baseTimeAvailable);
   })
     .timeout(baseTimeAvailable)
     .catch(() => "caught");
@@ -85,6 +85,6 @@ it("should settle", async () => {
   expect.assertions(2);
 
   expect(promiseToTest.settled).toBeFalsy();
-  const _ = await promiseToTest;
+  await promiseToTest;
   expect(promiseToTest.settled).toBeTruthy();
 });

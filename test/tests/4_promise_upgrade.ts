@@ -23,7 +23,7 @@ it("should be rejected", async () => {
   let promiseToTest = new TimedPromise(normalPromise).timeout(timeout);
 
   try {
-    const _ = await promiseToTest;
+    await promiseToTest;
   } catch (result) {
     expect(result).toBeTruthy();
   }
@@ -56,7 +56,7 @@ it("should be timeouted and throws exception", async () => {
   expect.assertions(2);
 
   try {
-    const _ = await promiseToTest;
+    await promiseToTest;
   } catch (error) {
     expect(error).toBe("promise timeout");
   }

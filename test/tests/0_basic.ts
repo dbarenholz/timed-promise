@@ -4,14 +4,14 @@ import TimedPromise from "../../src/index";
 // (there's no difference in rejecting TimedPromise<Boolean> or rejecting TimedPromise<Date> or any other type)
 it("rejection should be rejected", async () => {
   let promiseToTest = new TimedPromise<Boolean>((_resolve, reject, _timeout) => {
-    reject(true);
+    reject!(true);
   });
 
   expect.assertions(2);
 
   // Rejection not caught in promise, catch here.
   try {
-    const _ = await promiseToTest;
+    await promiseToTest;
   } catch (result) {
     expect(result).toBeTruthy();
   }
@@ -26,7 +26,7 @@ it("undefined should be resolved", async () => {
   let something_undefined: undefined;
 
   let promiseToTest = new TimedPromise<undefined>((resolve, _reject, _timeout) => {
-    resolve(something_undefined);
+    resolve!(something_undefined);
   });
 
   expect.assertions(2);
@@ -38,7 +38,7 @@ it("undefined should be resolved", async () => {
 // false in stead of true, chosen at random
 it("boolean should be resolved", async () => {
   let promiseToTest = new TimedPromise<Boolean>((resolve, _reject, _timeout) => {
-    resolve(false);
+    resolve!(false);
   });
 
   expect.assertions(2);
@@ -52,7 +52,7 @@ it("number should be resolved", async () => {
   const someNumber = 3;
 
   let promiseToTest = new TimedPromise<Number>((resolve, _reject, _timeout) => {
-    resolve(someNumber);
+    resolve!(someNumber);
   });
 
   expect.assertions(2);
@@ -66,7 +66,7 @@ it("string should be resolved", async () => {
   const someString = "hi, I'm a string";
 
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
-    resolve(someString);
+    resolve!(someString);
   });
 
   expect.assertions(2);
@@ -80,7 +80,7 @@ it("bigint should be resolved", async () => {
   const someBigint = BigInt(123412341234);
 
   let promiseToTest = new TimedPromise<BigInt>((resolve, _reject, _timeout) => {
-    resolve(someBigint);
+    resolve!(someBigint);
   });
 
   expect.assertions(2);
@@ -94,7 +94,7 @@ it("symbol should be resolved", async () => {
   const someSymbol = Symbol("some_symbol");
 
   let promiseToTest = new TimedPromise<Symbol>((resolve, _reject, _timeout) => {
-    resolve(someSymbol);
+    resolve!(someSymbol);
   });
 
   expect.assertions(2);
@@ -116,7 +116,7 @@ it("object should be resolved", async () => {
   };
 
   let promiseToTest = new TimedPromise<Object>((resolve, _reject, _timeout) => {
-    resolve(someObject);
+    resolve!(someObject);
   });
 
   expect.assertions(2);
@@ -131,7 +131,7 @@ it("function should be resolved", async () => {
   const someFunction = Function("one", "two", "three");
 
   let promiseToTest = new TimedPromise<Object>((resolve, _reject, _timeout) => {
-    resolve(someFunction);
+    resolve!(someFunction);
   });
 
   expect.assertions(2);
@@ -146,7 +146,7 @@ it("null should be resolved", async () => {
   const someNull = null;
 
   let promiseToTest = new TimedPromise<null>((resolve, _reject, _timeout) => {
-    resolve(someNull);
+    resolve!(someNull);
   });
 
   expect.assertions(2);

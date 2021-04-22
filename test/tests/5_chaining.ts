@@ -2,7 +2,7 @@ import TimedPromise from "../../src/index";
 
 it("should be resolved", async () => {
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {
-    resolve("resolve");
+    resolve!("resolve");
   })
     .then((v) => `${v}-then_1`)
     .catch((e) => e)
@@ -19,7 +19,7 @@ it("should be resolved", async () => {
 
 it("should be rejected", async () => {
   let promiseToTest = new TimedPromise<String>((_resolve, reject, _timeout) => {
-    reject("reject");
+    reject!("reject");
   })
     // then does nothing since rejected
     .then((v) => `${v}-then_1`)

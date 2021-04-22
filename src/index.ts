@@ -4,7 +4,7 @@
  * @param {Function} executor executor to check.
  * @returns {Boolean} `true` if executor is native, `false` otherwise.
  */
-function isNativePromiseExecutor<T>(executor: Function): boolean {
+function isNativePromiseExecutor(executor: Function): boolean {
   return /^function[\sA-Za-z0-9]*\(\s*\)\s*{\s*\[\s*native\s+code\s*\]\s*}\s*$/.test(executor.toString());
 }
 
@@ -20,16 +20,16 @@ function isNativePromiseExecutor<T>(executor: Function): boolean {
  * @field resolve: resolve method in promises
  * @field reject:  reject method in promises
  * @see Promise
- * @version 0.2.0
+ * @version 0.3.0
  */
 type TimedPromiseType = {
-  parent: TimedPromise<any>;
+  parent: TimedPromise<any> | null;
   created: number;
   timeout: number;
-  timer: NodeJS.Timeout;
+  timer: NodeJS.Timeout | null;
   pending: boolean;
-  resolve: (value: any, ms?: number) => void;
-  reject: (reason?: any) => void;
+  resolve: ((value: any, ms?: number) => void) | null;
+  reject: ((reason?: any) => void) | null;
 };
 
 /**
@@ -65,7 +65,7 @@ interface TimedPromiseInterface<T> extends Promise<T> {
  * @class TimedPromise
  * @description A promise that can be timed out, with typings.
  * @extends Promise<T> Adds timeouts to promises.
- * @version 0.2.0
+ * @version 0.3.0
  */
 export default class TimedPromise<T> extends Promise<T> implements TimedPromiseInterface<T> {
   timedPromise: TimedPromiseType;
@@ -80,7 +80,7 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
       | Promise<T>
       | PromiseLike<T>
   ) {
-    let timedPromise = {
+    let timedPromise: TimedPromiseType = {
       parent: null,
       created: Date.now(),
       timeout: Infinity,
@@ -95,7 +95,7 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
       timedPromise.resolve = (value: T) => {
         if (timedPromise.pending) {
           timedPromise.pending = false;
-          if (timedPromise.timer) {
+          if (timedPromise.timer != null) {
             clearTimeout(timedPromise.timer);
             timedPromise.timer = null;
           }
@@ -116,7 +116,7 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
       };
 
       // if a function, check if native
-      if (executor instanceof Function && isNativePromiseExecutor<T>(executor)) {
+      if (executor instanceof Function && isNativePromiseExecutor(executor)) {
         executor(timedPromise.resolve, timedPromise.reject);
       }
       // if a promise, then use promise stuff
@@ -124,7 +124,7 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
         executor.then(timedPromise.resolve, timedPromise.reject);
       }
       // non-native function
-      if (executor instanceof Function && !isNativePromiseExecutor<T>(executor)) {
+      if (executor instanceof Function && !isNativePromiseExecutor(executor)) {
         executor(timedPromise.resolve, timedPromise.reject, Infinity);
       }
     });
@@ -153,7 +153,8 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
 
       this.timedPromise.timer = setTimeout(() => {
         this.timedPromise.timer = null;
-        this.timedPromise.reject(reason);
+        // Typescript does not realise this can never be null
+        this.timedPromise.reject!(reason);
       }, ms);
 
       if (!catchable_by_parent && this.timedPromise.parent && this.timedPromise.parent.timeout) {
