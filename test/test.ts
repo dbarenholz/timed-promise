@@ -1,6 +1,4 @@
-// Jest requires CommonJS syntax:
-// import fs from "fs" gives 'Cannot read property 'readdirSync' of undefined'
-const fs = require("fs");
+import fs from "fs";
 
 describe("Tests", () => {
   let files = fs.readdirSync(__dirname + "/tests");
@@ -22,7 +20,6 @@ function sleep(ms: number): Promise<any> {
 }
 
 /**
- *
  * Returns true when first and second number are approximately equal
  *
  * @param {Number} first first number

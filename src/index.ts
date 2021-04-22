@@ -10,17 +10,16 @@ function isNativePromiseExecutor(executor: Function): boolean {
 
 /**
  * @author Barenholz D.
- * @type TimedPromiseType<T>
- * @description The particular fields in a timed promise and their typings.
- * @field parent:  a possible parent promise
- * @field created: time (unix time) at which promise was created
- * @field timeout: number of ms before timedpromise should throw error / reject
- * @field timer:   the actual timer that keeps track of the timeout
- * @field pending: boolean indicating if promise is pending, or completed / settled
- * @field resolve: resolve method in promises
- * @field reject:  reject method in promises
+ * @typedef {Object<T>} TimedPromiseType<T> The particular fields in a timed promise and their typings.
+ * @property {(TimedPromise<any> | null)} parent  a possible parent promise
+ * @property {Number}                     created time (unix time) at which promise was created
+ * @property {Number}                     timeout number of ms before timedpromise should throw error / reject
+ * @property {(NodeJS.Timeout | null)}    timer   the actual timer that keeps track of the timeout
+ * @property {Boolean}                    pending boolean indicating if promise is pending, or completed / settled
+ * @property {(Function | null)}          resolve resolve method in promises
+ * @property {(Function | null)}          reject  reject method in promises
  * @see Promise
- * @version 0.3.0
+ * @version 1.0.0
  */
 type TimedPromiseType = {
   parent: TimedPromise<any> | null;
@@ -34,12 +33,13 @@ type TimedPromiseType = {
 
 /**
  * Represents the completion of an asynchronous operation, **with timeouts**.
+ * @extends Promise<T>
  */
 interface TimedPromiseInterface<T> extends Promise<T> {
   /**
    * Attaches callbacks for the resolution and/or rejection of the TimedPromise.
    * @param {void} onfulfilled The callback to execute when the TimedPromise is resolved.
-   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   * @param {void} onrejected  The callback to execute when the TimedPromise is rejected.
    *
    * @returns {TimedPromise<TypeA | TypeB>} A TimedPromise for the completion of which ever callback is executed.
    */
@@ -67,7 +67,7 @@ interface TimedPromiseInterface<T> extends Promise<T> {
  * @extends Promise<T> Adds timeouts to promises.
  * @version 0.3.0
  */
-export default class TimedPromise<T> extends Promise<T> implements TimedPromiseInterface<T> {
+export class TimedPromise<T> extends Promise<T> implements TimedPromiseInterface<T> {
   timedPromise: TimedPromiseType;
 
   /**
@@ -134,9 +134,9 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
 
   /**
    * Allows `.timeout()` call on a TimedPromise object to set the timeout.
-   * @param {Number} ms                      the timeout value in ms
-   * @param {String} reason                  possible custom reason why a promise rejected
-   * @param {Boolean} catchable_by_parent    boolean stating whether or not this rejection is catchable by a parent promise
+   * @param {Number}  ms                           the timeout value in ms
+   * @param {String}  [reason="promise timeout"]   possible custom reason why a promise rejected
+   * @param {Boolean} [catchable_by_parent=false]  boolean stating whether or not this rejection is catchable by a parent promise
    * @returns {TimedPromise<T>} `this`, TimedPromise instance.
    */
   timeout(ms: number, reason: String = "promise timeout", catchable_by_parent: Boolean = false): TimedPromise<T> {
@@ -200,7 +200,7 @@ export default class TimedPromise<T> extends Promise<T> implements TimedPromiseI
   /**
    * Attaches callbacks for the resolution and/or rejection of the TimedPromise.
    * @param {void} onfulfilled The callback to execute when the TimedPromise is resolved.
-   * @param {void} onrejected The callback to execute when the TimedPromise is rejected.
+   * @param {void} onrejected  The callback to execute when the TimedPromise is rejected.
    *
    * @returns {TimedPromise<TypeA | TypeB>} A TimedPromise for the completion of which ever callback is executed.
    */
