@@ -1,4 +1,4 @@
-import TimedPromise from "../../src/index";
+import { TimedPromise } from "../../src/index";
 
 it("should be resolved", async () => {
   let promiseToTest = new TimedPromise<String>((resolve, _reject, _timeout) => {

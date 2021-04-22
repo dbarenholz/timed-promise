@@ -1,4 +1,4 @@
-import TimedPromise from "../../src/index";
+import { TimedPromise } from "../../src/index";
 import { approximately } from "../test";
 
 it("should be resolved without triggering timeout", async () => {

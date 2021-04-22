@@ -1,4 +1,4 @@
-import TimedPromise from "../../src/index";
+import { TimedPromise } from "../../src/index";
 
 // Rejection is with <any>, so only one possible value needs to be tested
 // (there's no difference in rejecting TimedPromise<Boolean> or rejecting TimedPromise<Date> or any other type)

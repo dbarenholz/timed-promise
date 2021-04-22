@@ -1,4 +1,4 @@
-import TimedPromise from "../../src/index";
+import { TimedPromise } from "../../src/index";
 
 it("should be timeouted with string rejection", async () => {
   const customMessage = "custom message";

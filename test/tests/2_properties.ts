@@ -1,4 +1,4 @@
-import TimedPromise from "../../src/index";
+import { TimedPromise } from "../../src/index";
 import { approximately, sleep } from "../test";
 
 it("should be matching", async () => {
