@@ -9,4 +9,4 @@ My personal goals for this repository:
 - [X] Learning how to publish a module to NPM.
 - [X] Getting familiar with typescript, and particular differences between it and vanilla JS.
 
-Documentation is available in the docs folder, which should be hosted via github for your convenience.
+Documentation is available in the docs folder, which [should be hosted via github for your convenience](https://dbarenholz.github.io/timed-promise/).
